@@ -1,0 +1,18 @@
+name: borrow-snapshot
+on:
+  schedule:
+    - cron: "*/10 12-15 * * 1-5"   # GitHub runs are often late; snap.py decides what to keep
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: snap
+jobs:
+  snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 snap.py || true
+      - run: |
+          git config user.name "borrow-bot"; git config user.email "borrow-bot@users.noreply.github.com"
+          git add snap && (git diff --cached --quiet || (git commit -m "snapshot $(date -u +%FT%H:%MZ)" && git pull --rebase && git push))
