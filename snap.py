@@ -2,16 +2,17 @@
 snap/YYYY-MM-DD/pre.csv.gz  = latest copy taken before 9:30 New York
 snap/YYYY-MM-DD/post.csv.gz = first copy taken at/after 9:30 (up to 10:30)
 Columns: sym, fee (annual %), available (shares). Stocks missing from the list cannot be shorted at IBKR."""
-import urllib.request, gzip, io, csv, re, sys
+import urllib.request, gzip, io, csv, re, sys, os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
 now = datetime.now(ZoneInfo("America/New_York"))
-if now.weekday() >= 5:
+TEST = os.environ.get("TEST") == "1"   # manual check: fetch and count only
+if now.weekday() >= 5 and not TEST:
     sys.exit("weekend")
 m = now.hour * 60 + now.minute
-if m < 8 * 60 or m > 10 * 60 + 30:
+if (m < 8 * 60 or m > 10 * 60 + 30) and not TEST:
     sys.exit("outside window")
 kind = "pre" if m < 9 * 60 + 30 else "post"
 d = Path("snap") / now.strftime("%Y-%m-%d"); d.mkdir(parents=True, exist_ok=True)
@@ -28,6 +29,8 @@ for _ in range(5):
 if raw is None:
     sys.exit(1)
 lines = raw.splitlines()
+if TEST:
+    sys.exit(f"TEST ok: {len(lines)} lines, header {lines[0]}")
 stamp = lines[0].split("|")[1:3]
 out = io.StringIO(); w = csv.writer(out)
 w.writerow(["sym", "fee", "available", "file_time", "saved_ny"])
