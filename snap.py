@@ -8,9 +8,12 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 
 now = datetime.now(ZoneInfo("America/New_York"))
+NYSE_CLOSED = {  # full-day US market holidays (half days trade normally)
+    "2026-11-26", "2026-12-25", "2027-01-01", "2027-01-18", "2027-02-15", "2027-03-26", "2027-05-31",
+    "2027-06-18", "2027-07-05", "2027-09-06", "2027-11-25", "2027-12-24"}
 TEST = os.environ.get("TEST") == "1"   # manual check: fetch and count only
-if now.weekday() >= 5 and not TEST:
-    sys.exit("weekend")
+if (now.weekday() >= 5 or now.strftime("%Y-%m-%d") in NYSE_CLOSED) and not TEST:
+    sys.exit("market closed")
 m = now.hour * 60 + now.minute
 if (m < 8 * 60 or m > 10 * 60 + 30) and not TEST:
     sys.exit("outside window")
